@@ -113,46 +113,33 @@ tab1, tab2, tab3 = st.tabs(["📊 Vue Globale & Tendances", "🎯 Zoom sur une s
 # ONGLET 1 : VUE GLOBALE & ALERTES
 # ==========================================
 with tab1:
-    st.subheader("Alertes Fatigue / Surcharge (dernières 48h)")
+   st.subheader("Feu de signalisation avant séance (dernières 48h)")
     df_48h = df[df["Date"] >= maintenant - pd.Timedelta(hours=48)].copy()
     df_48h = df_48h.sort_values("Date").drop_duplicates(subset=["Joueur"], keep="last")
 
-    def analyser_alerte(row):
-        motifs = []
-        if row["Courbatures"] <= 2: motifs.append("Douleurs / Courbatures")
-        if row["Sommeil"] <= 2: motifs.append("Mauvais sommeil")
-        if row["Score_BienEtre"] <= 8: motifs.append("Bien-être bas")
-        if row["RPE"] >= 8 or row["Charge_sRPE"] >= 700: motifs.append("Grosse charge")
-        return " + ".join(motifs)
-
-    def niveau_alerte(row):
-        if (row["RPE"] >= 8 and row["Score_BienEtre"] <= 8) or row["Courbatures"] <= 2:
-            return "🔴 Critique"
-        return "🟠 Vigilance"
-
-    def action_coach(row):
-        if row["Courbatures"] <= 2: return "Bilan individuel / Adapter la séance"
-        elif row["RPE"] >= 8 and row["Score_BienEtre"] <= 8: return "Alléger le volume / Récupération"
-        else: return "Surveiller à l'échauffement"
-
     if not df_48h.empty:
-        df_48h["Motif"] = df_48h.apply(analyser_alerte, axis=1)
-        alertes = df_48h[df_48h["Motif"] != ""].copy()
+        # 1. Risque physique direct (douleur/courbatures fortes)
+        rouges = df_48h[df_48h["Courbatures"] <= 2]
+        # 2. Fatigue générale sans douleur aiguë
+        oranges = df_48h[(df_48h["Courbatures"] > 2) & ((df_48h["Score_BienEtre"] <= 8) | (df_48h["Sommeil"] <= 2))]
 
-        if not alertes.empty:
-            alertes["Niveau"] = alertes.apply(niveau_alerte, axis=1)
-            alertes["Action conseillée"] = alertes.apply(action_coach, axis=1)
-            alertes["Priorite"] = alertes["Niveau"].apply(lambda x: 0 if "Critique" in x else 1)
-            alertes = alertes.sort_values(by="Priorite")
+        col_r, col_o = st.columns(2)
 
-            st.warning(f"{len(alertes)} joueur(s) en alerte sur les 48 dernières heures")
-            st.dataframe(
-                alertes[["Niveau", "Joueur", "Motif", "Action conseillée"]],
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            st.success("RAS : aucune alerte fatigue, douleur ou surcharge sur les dernières 48h.")
+        with col_r:
+            if not rouges.empty:
+                st.error(f"🔴 À voir avant l'échauffement ({len(rouges)}) — Douleur / Gêne musculaire")
+                for _, row in rouges.iterrows():
+                    st.markdown(f"- **{row['Joueur']}** : Musculaire **{int(row['Courbatures'])}/5** *(Bien-être {int(row['Score_BienEtre'])}/15)*")
+            else:
+                st.success("🟢 Aucune douleur musculaire signalée")
+
+        with col_o:
+            if not oranges.empty:
+                st.warning(f"🟠 À ménager sur le volume ({len(oranges)}) — Fatigue / Sommeil")
+                for _, row in oranges.iterrows():
+                    st.markdown(f"- **{row['Joueur']}** : Sommeil **{int(row['Sommeil'])}/5** | Forme **{int(row['Fatigue'])}/5** *(Bien-être {int(row['Score_BienEtre'])}/15)*")
+            else:
+                st.success("🟢 Aucune fatigue anormale signalée")
     else:
         st.info("Aucune donnée saisie sur les 48 dernières heures.")
 
