@@ -345,8 +345,8 @@ with tab3:
         # Calcul ACWR individuel
         c_7j = df_j[df_j["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
         c_28j = df_j[df_j["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
-        acwr_j = (c_7j / (c_28j / 4)) if c_28j > 0 else None
-
+       jours_hist_j = (df_j["Date"].max() - df_j["Date"].min()).days if not df_j.empty else 0
+        acwr_j = (c_7j / (c_28j / 4)) if (c_28j > 0 and jours_hist_j >= 21) else None
         # KPIs du joueur
         k1, k2, k3, k4 = st.columns(4)
         k1.metric("Charge moyenne", f"{df_j['Charge_sRPE'].mean():.0f} UA", interpreter_charge(df_j['Charge_sRPE'].mean()), delta_color="off")
