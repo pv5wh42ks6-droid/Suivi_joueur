@@ -64,6 +64,7 @@ def load_data(url):
     df["Charge_sRPE"] = df["Duree"] * df["RPE"]
     df["Score_BienEtre"] = df["Sommeil"] + df["Fatigue"] + df["Courbatures"]
     df["Seance_ID"] = df["Date"].dt.strftime("%d/%m/%Y") + " — " + df["Type"]
+    df["Seance_Courte"] = df["Date"].dt.strftime("%d/%m") + " (" + df["Type"].str[0] + ")"
     return df
 
 df = load_data(SHEET_URL)
@@ -179,12 +180,12 @@ with tab1:
     else:
         st.info("Aucune donnée enregistrée sur cette période.")
 
-    # Graphique d'évolution Plotly (coloré par intensité)
+ # Graphique d'évolution Plotly (optimisé mobile)
     st.subheader(f"Évolution de la charge (sRPE) — {periode}")
     if not df_filtre.empty:
         charge_jour = (
             df_filtre.sort_values("Date")
-            .groupby("Seance_ID", sort=False)["Charge_sRPE"]
+            .groupby("Seance_Courte", sort=False)["Charge_sRPE"]
             .mean()
             .reset_index()
         )
@@ -192,26 +193,25 @@ with tab1:
 
         fig_evol = go.Figure()
         fig_evol.add_trace(go.Bar(
-            x=charge_jour["Seance_ID"],
+            x=charge_jour["Seance_Courte"],
             y=charge_jour["Charge_sRPE"],
             marker_color=charge_jour["Couleur"],
-            text=charge_jour["Charge_sRPE"].round(0).astype(int).astype(str) + " UA",
+            text=charge_jour["Charge_sRPE"].round(0).astype(int),
             textposition="outside",
-            textfont=dict(size=15)
+            textfont=dict(size=13)
         ))
         fig_evol.add_hline(
             y=700, line_dash="dash", line_color="#EF4444",
-            annotation_text="Seuil Surcharge (700 UA)", annotation_position="top left"
+            annotation_text="700 UA", annotation_position="top left"
         )
         fig_evol.update_layout(
-            height=420,
-            xaxis_title="",
-            yaxis_title="Charge moyenne (UA)",
-            yaxis=dict(range=[0, max(charge_jour["Charge_sRPE"].max() * 1.18, 800)]),
-            margin=dict(t=30, b=20),
+            height=360,
+            xaxis=dict(title="", tickangle=-35, fixedrange=True),
+            yaxis=dict(title="Charge (UA)", range=[0, max(charge_jour["Charge_sRPE"].max() * 1.2, 800)], fixedrange=True),
+            margin=dict(t=25, b=40, l=10, r=10),
             showlegend=False
         )
-        st.plotly_chart(fig_evol, use_container_width=True)
+        st.plotly_chart(fig_evol, use_container_width=True, config={"displayModeBar": False})
 
     with st.expander("Guide de lecture des indicateurs (RPE, Charge, Bien-être, ACWR)"):
         st.markdown("""
@@ -344,46 +344,45 @@ with tab3:
 
         col_j1, col_j2 = st.columns(2)
 
-        # Graphique 1 : Évolution de sa charge
+       # Graphique 1 : Évolution de sa charge
         with col_j1:
             st.markdown(f"**Évolution de la charge (sRPE) — {joueur_choisi}**")
             df_j["Couleur"] = df_j["Charge_sRPE"].apply(couleur_charge)
             fig_jc = go.Figure()
             fig_jc.add_trace(go.Bar(
-                x=df_j["Seance_ID"],
+                x=df_j["Seance_Courte"],
                 y=df_j["Charge_sRPE"],
                 marker_color=df_j["Couleur"],
-                text=df_j["Charge_sRPE"].round(0).astype(int).astype(str) + " UA",
-                textposition="outside"
+                text=df_j["Charge_sRPE"].round(0).astype(int),
+                textposition="outside",
+                textfont=dict(size=12)
             ))
             fig_jc.add_hline(y=700, line_dash="dash", line_color="#EF4444")
             fig_jc.update_layout(
-                height=400,
-                xaxis_title="",
-                yaxis_title="Charge (UA)",
-                yaxis=dict(range=[0, max(df_j["Charge_sRPE"].max() * 1.2, 800)]),
-                margin=dict(t=20, b=20),
+                height=350,
+                xaxis=dict(title="", tickangle=-35, fixedrange=True),
+                yaxis=dict(title="Charge (UA)", range=[0, max(df_j["Charge_sRPE"].max() * 1.2, 800)], fixedrange=True),
+                margin=dict(t=20, b=40, l=10, r=10),
                 showlegend=False
             )
-            st.plotly_chart(fig_jc, use_container_width=True)
+            st.plotly_chart(fig_jc, use_container_width=True, config={"displayModeBar": False})
 
-        # Graphique 2 : Évolution détaillée du bien-être (Sommeil / Fatigue / Courbatures)
+        # Graphique 2 : Évolution détaillée du bien-être
         with col_j2:
             st.markdown(f"**Détail Bien-être (/5) — {joueur_choisi}**")
             fig_jbe = go.Figure()
-            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Sommeil"], mode="lines+markers", name="Sommeil", line=dict(width=3)))
-            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Fatigue"], mode="lines+markers", name="Forme / Fatigue", line=dict(width=3)))
-            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Courbatures"], mode="lines+markers", name="État musculaire", line=dict(width=3)))
-            fig_jbe.add_hline(y=2.5, line_dash="dash", line_color="#EF4444", annotation_text="Seuil alerte")
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_Courte"], y=df_j["Sommeil"], mode="lines+markers", name="Sommeil", line=dict(width=3)))
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_Courte"], y=df_j["Fatigue"], mode="lines+markers", name="Forme", line=dict(width=3)))
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_Courte"], y=df_j["Courbatures"], mode="lines+markers", name="Musculaire", line=dict(width=3)))
+            fig_jbe.add_hline(y=2.5, line_dash="dash", line_color="#EF4444")
             fig_jbe.update_layout(
-                height=400,
-                xaxis_title="",
-                yaxis_title="Note (/5)",
-                yaxis=dict(range=[0.5, 5.5], dtick=1),
-                margin=dict(t=20, b=20),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                height=350,
+                xaxis=dict(title="", tickangle=-35, fixedrange=True),
+                yaxis=dict(title="Note (/5)", range=[0.5, 5.5], dtick=1, fixedrange=True),
+                margin=dict(t=35, b=40, l=10, r=10),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
             )
-            st.plotly_chart(fig_jbe, use_container_width=True)
+            st.plotly_chart(fig_jbe, use_container_width=True, config={"displayModeBar": False})
 
         # Historique complet du joueur
         with st.expander(f"Historique complet de {joueur_choisi}"):
