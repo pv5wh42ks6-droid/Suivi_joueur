@@ -89,29 +89,11 @@ def couleur_charge(val):
     else: return "#10B981"            # Vert (Modérée/Faible)
 
 # 2. Filtres dans la barre latérale
-st.sidebar.header("Filtres (Vue Globale)")
-
-periode = st.sidebar.selectbox(
-    "Période d'analyse",
-    ["7 derniers jours", "14 derniers jours", "21 derniers jours", "28 derniers jours", "Toute la saison"]
-)
-
-jours_map = {
-    "7 derniers jours": 7,
-    "14 derniers jours": 14,
-    "21 derniers jours": 21,
-    "28 derniers jours": 28,
-}
-
-if periode in jours_map:
-    df_periode = df[df["Date"] >= maintenant - pd.Timedelta(days=jours_map[periode])]
-else:
-    df_periode = df
-
-joueurs = ["Tous"] + sorted(df["Joueur"].dropna().unique().tolist())
-selection = st.sidebar.selectbox("Filtrer par joueur", joueurs)
-
-df_filtre = df_periode if selection == "Tous" else df_periode[df_periode["Joueur"] == selection]
+# Calcul du ratio ACWR global de l'équipe (toujours sur 7j / 28j)
+charge_7j = df[df["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
+charge_28j = df[df["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
+charge_chronique = charge_28j / 4
+acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
 
 # Calcul du ratio ACWR
 df_acwr = df if selection == "Tous" else df[df["Joueur"] == selection]
