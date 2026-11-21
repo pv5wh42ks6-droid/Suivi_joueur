@@ -96,9 +96,8 @@ charge_chronique = charge_28j / 4
 acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
 
 # Calcul du ratio ACWR
-df_acwr = df if selection == "Tous" else df[df["Joueur"] == selection]
-charge_7j = df_acwr[df_acwr["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
-charge_28j = df_acwr[df_acwr["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
+charge_7j = df[df["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
+charge_28j = df[df["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
 charge_chronique = charge_28j / 4
 acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
 
