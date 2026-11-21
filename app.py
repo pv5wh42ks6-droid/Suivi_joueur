@@ -6,22 +6,34 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Suivi Charge & Fatigue", layout="wide")
 
 # Agrandissement de la police pour une meilleure lisibilité
+# Agrandissement de la police et mise en gras pour une meilleure lisibilité
 st.markdown("""
     <style>
     html, body, [class*="css"] {
         font-size: 19px !important;
+        font-weight: 600 !important;
+    }
+    h1, h2, h3, [data-testid="stMarkdownContainer"] p {
+        font-weight: 700 !important;
     }
     [data-testid="stMetricValue"] {
         font-size: 38px !important;
+        font-weight: 800 !important;
     }
     [data-testid="stMetricLabel"] {
         font-size: 19px !important;
+        font-weight: 700 !important;
     }
     [data-testid="stMetricDelta"] {
         font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+    button[data-baseweb="tab"] {
+        font-weight: 700 !important;
     }
     .stDataFrame {
         font-size: 18px !important;
+        font-weight: 600 !important;
     }
     </style>
 """, unsafe_allow_html=True)
