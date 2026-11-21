@@ -101,19 +101,12 @@ def couleur_charge(val):
     elif val >= 500: return "#F59E0B" # Orange (Élevée)
     else: return "#10B981"            # Vert (Modérée/Faible)
 
-# 2. Filtres dans la barre latérale
 # Calcul du ratio ACWR global de l'équipe (toujours sur 7j / 28j)
 charge_7j = df[df["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
 charge_28j = df[df["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
 charge_chronique = charge_28j / 4
-acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
-
-# Calcul du ratio ACWR
-charge_7j = df[df["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
-charge_28j = df[df["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
-charge_chronique = charge_28j / 4
-acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
-
+jours_historique = (df["Date"].max() - df["Date"].min()).days if not df.empty else 0
+acwr = (charge_7j / charge_chronique) if (charge_chronique > 0 and jours_historique >= 21) else None
 # Création des 2 onglets principaux
 tab1, tab2, tab3 = st.tabs(["📊 Vue Globale & Tendances", "🎯 Zoom sur une séance", "👤 Fiche Joueur"])
 # ==========================================
