@@ -3,10 +3,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Suivi Charge & Fatigue", layout="wide")
+st.set_page_config(page_title="Suivi-effectif-r1", layout="wide")
 
 # Agrandissement de la police pour une meilleure lisibilité
 # Agrandissement de la police et mise en gras pour une meilleure lisibilité
+
 st.markdown("""
     <style>
     html, body, [class*="css"] {
@@ -38,7 +39,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Suivi de Charge (sRPE) & Bien-être")
+st.title("Suivi-effectif-r1")
 
 # 1. Connexion au Google Sheet (remets ton lien CSV publié sur le web ici)
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSZsVjNKilfSEcCmvFoLjyDr4KNxOs06P52uO-nxqMtQPf-DZYakuj6qQ3IvpbR3jumiMz-QAeBN6Qd/pub?gid=1027957261&single=true&output=csv"
