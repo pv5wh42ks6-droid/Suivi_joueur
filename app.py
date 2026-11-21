@@ -121,8 +121,7 @@ charge_chronique = charge_28j / 4
 acwr = (charge_7j / charge_chronique) if charge_chronique > 0 else None
 
 # Création des 2 onglets principaux
-tab1, tab2 = st.tabs(["📊 Vue Globale & Tendances", "🎯 Zoom sur une séance"])
-
+tab1, tab2, tab3 = st.tabs(["📊 Vue Globale & Tendances", "🎯 Zoom sur une séance", "👤 Fiche Joueur"])
 # ==========================================
 # ONGLET 1 : VUE GLOBALE & ALERTES
 # ==========================================
@@ -330,3 +329,80 @@ with tab2:
             )
     else:
         st.info("Aucune séance disponible.")
+# ==========================================
+# ONGLET 3 : FICHE INDIVIDUELLE JOUEUR
+# ==========================================
+with tab3:
+    liste_joueurs = sorted(df["Joueur"].dropna().unique().tolist())
+
+    if liste_joueurs:
+        joueur_choisi = st.selectbox("Sélectionner un joueur :", liste_joueurs)
+        df_j = df[df["Joueur"] == joueur_choisi].sort_values("Date").copy()
+
+        # Calcul ACWR individuel
+        c_7j = df_j[df_j["Date"] >= maintenant - pd.Timedelta(days=7)]["Charge_sRPE"].sum()
+        c_28j = df_j[df_j["Date"] >= maintenant - pd.Timedelta(days=28)]["Charge_sRPE"].sum()
+        acwr_j = (c_7j / (c_28j / 4)) if c_28j > 0 else None
+
+        # KPIs du joueur
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Charge moyenne", f"{df_j['Charge_sRPE'].mean():.0f} UA", interpreter_charge(df_j['Charge_sRPE'].mean()), delta_color="off")
+        k2.metric("RPE moyen", f"{df_j['RPE'].mean():.1f} / 10", interpreter_rpe(df_j['RPE'].mean()), delta_color="off")
+        k3.metric("Bien-être moyen", f"{df_j['Score_BienEtre'].mean():.1f} / 15", interpreter_bien_etre(df_j['Score_BienEtre'].mean()), delta_color="off")
+        k4.metric("Ratio ACWR", f"{acwr_j:.2f}" if acwr_j is not None else "N/A", interpreter_acwr(acwr_j), delta_color="off")
+
+        st.divider()
+
+        col_j1, col_j2 = st.columns(2)
+
+        # Graphique 1 : Évolution de sa charge
+        with col_j1:
+            st.markdown(f"**Évolution de la charge (sRPE) — {joueur_choisi}**")
+            df_j["Couleur"] = df_j["Charge_sRPE"].apply(couleur_charge)
+            fig_jc = go.Figure()
+            fig_jc.add_trace(go.Bar(
+                x=df_j["Seance_ID"],
+                y=df_j["Charge_sRPE"],
+                marker_color=df_j["Couleur"],
+                text=df_j["Charge_sRPE"].round(0).astype(int).astype(str) + " UA",
+                textposition="outside"
+            ))
+            fig_jc.add_hline(y=700, line_dash="dash", line_color="#EF4444")
+            fig_jc.update_layout(
+                height=400,
+                xaxis_title="",
+                yaxis_title="Charge (UA)",
+                yaxis=dict(range=[0, max(df_j["Charge_sRPE"].max() * 1.2, 800)]),
+                margin=dict(t=20, b=20),
+                showlegend=False
+            )
+            st.plotly_chart(fig_jc, use_container_width=True)
+
+        # Graphique 2 : Évolution détaillée du bien-être (Sommeil / Fatigue / Courbatures)
+        with col_j2:
+            st.markdown(f"**Détail Bien-être (/5) — {joueur_choisi}**")
+            fig_jbe = go.Figure()
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Sommeil"], mode="lines+markers", name="Sommeil", line=dict(width=3)))
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Fatigue"], mode="lines+markers", name="Forme / Fatigue", line=dict(width=3)))
+            fig_jbe.add_trace(go.Scatter(x=df_j["Seance_ID"], y=df_j["Courbatures"], mode="lines+markers", name="État musculaire", line=dict(width=3)))
+            fig_jbe.add_hline(y=2.5, line_dash="dash", line_color="#EF4444", annotation_text="Seuil alerte")
+            fig_jbe.update_layout(
+                height=400,
+                xaxis_title="",
+                yaxis_title="Note (/5)",
+                yaxis=dict(range=[0.5, 5.5], dtick=1),
+                margin=dict(t=20, b=20),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            st.plotly_chart(fig_jbe, use_container_width=True)
+
+        # Historique complet du joueur
+        with st.expander(f"Historique complet de {joueur_choisi}"):
+            st.dataframe(
+                df_j[["Seance_ID", "Duree", "RPE", "Charge_sRPE", "Sommeil", "Fatigue", "Courbatures", "Score_BienEtre"]]
+                .iloc[::-1],
+                use_container_width=True,
+                hide_index=True
+            )
+    else:
+        st.info("Aucun joueur disponible.")
