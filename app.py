@@ -133,7 +133,7 @@ def interpreter_acwr(val):
 # 3. Alertes récentes enrichies (tout en haut pour le coach)
 st.subheader("Alertes Fatigue / Surcharge (dernières 48h)")
 df_48h = df[df["Date"] >= maintenant - pd.Timedelta(hours=48)].copy()
-
+df_48h = df_48h.sort_values("Date").drop_duplicates(subset=["Joueur"], keep="last")
 def analyser_alerte(row):
     motifs = []
     if row["Courbatures"] <= 2:
