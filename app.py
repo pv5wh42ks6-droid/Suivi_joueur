@@ -113,10 +113,9 @@ tab1, tab2, tab3 = st.tabs(["📊 Vue Globale & Tendances", "🎯 Zoom sur une s
 # ONGLET 1 : VUE GLOBALE & ALERTES
 # ==========================================
 with tab1:
-   st.subheader("Feu de signalisation avant séance (dernières 48h)")
+    st.subheader("Feu de signalisation avant séance (dernières 48h)")
     df_48h = df[df["Date"] >= maintenant - pd.Timedelta(hours=48)].copy()
     df_48h = df_48h.sort_values("Date").drop_duplicates(subset=["Joueur"], keep="last")
-
     if not df_48h.empty:
         # 1. Risque physique direct (douleur/courbatures fortes)
         rouges = df_48h[df_48h["Courbatures"] <= 2]
