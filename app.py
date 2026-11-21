@@ -152,7 +152,23 @@ with tab1:
         st.info("Aucune donnée saisie sur les 48 dernières heures.")
 
     st.divider()
+# Sélecteur du nombre de séances à analyser
+    seances_uniques = df.sort_values("Date", ascending=False)["Seance_ID"].unique().tolist()
+    nb_max = len(seances_uniques)
 
+    if nb_max > 1:
+        nb_seances = st.slider(
+            "Nombre de dernières séances à analyser :",
+            min_value=1,
+            max_value=nb_max,
+            value=min(4, nb_max)  # Par défaut : les 4 dernières séances (1 semaine type)
+        )
+        seances_retenues = seances_uniques[:nb_seances]
+        df_filtre = df[df["Seance_ID"].isin(seances_retenues)]
+        periode = f"{nb_seances} dernières séances"
+    else:
+        df_filtre = df
+        periode = "Toutes les séances"
     # KPIs Globaux
     col1, col2, col3, col4 = st.columns(4)
     if not df_filtre.empty:
